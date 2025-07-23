@@ -1,0 +1,184 @@
+// apps/backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  avatar    String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  ownedRooms       RecordingRoom[] @relation("RoomOwner")
+  participantRooms RoomParticipant[]
+  recordings       Recording[]
+  
+  @@map("users")
+}
+
+model RecordingRoom {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      RoomStatus @default(WAITING)
+  
+  // Room settings
+  maxParticipants Int @default(6)
+  isPublic        Boolean @default(false)
+  inviteCode      String @unique
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  startedAt DateTime?
+  endedAt   DateTime?
+  
+  // Relations
+  ownerId      String
+  owner        User @relation("RoomOwner", fields: [ownerId], references: [id])
+  participants RoomParticipant[]
+  recordings   Recording[]
+  
+  @@map("recording_rooms")
+}
+
+model RoomParticipant {
+  id       String @id @default(cuid())
+  joinedAt DateTime @default(now())
+  leftAt   DateTime?
+  role     ParticipantRole @default(PARTICIPANT)
+  
+  // Connection info
+  socketId String?
+  peerId   String?
+  isConnected Boolean @default(false)
+  
+  // Relations
+  userId String
+  roomId String
+  user   User @relation(fields: [userId], references: [id])
+  room   RecordingRoom @relation(fields: [roomId], references: [id])
+  
+  @@unique([userId, roomId])
+  @@map("room_participants")
+}
+
+model Recording {
+  id       String @id @default(cuid())
+  title    String
+  duration Int?    // Duration in seconds
+  status   RecordingStatus @default(PROCESSING)
+  
+  // File information
+  audioUrl      String?
+  videoUrl      String?
+  thumbnailUrl  String?
+  originalSize  BigInt?
+  processedSize BigInt?
+  
+  // Recording settings
+  audioQuality String @default("high") // high, medium, low
+  videoQuality String @default("720p")  // 1080p, 720p, 480p, none
+  format       String @default("mp3")   // mp3, wav, m4a
+  
+  // Metadata
+  metadata Json?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  recordedAt DateTime?
+  
+  // Relations
+  userId String
+  roomId String
+  user   User @relation(fields: [userId], references: [id])
+  room   RecordingRoom @relation(fields: [roomId], references: [id])
+  files  RecordingFile[]
+  
+  @@map("recordings")
+}
+
+model RecordingFile {
+  id       String @id @default(cuid())
+  filename String
+  fileUrl  String
+  fileSize BigInt
+  mimeType String
+  
+  // File metadata
+  duration    Int?     // Duration in seconds for audio/video
+  sampleRate  Int?     // Audio sample rate
+  bitrate     Int?     // Audio/video bitrate
+  resolution  String?  // Video resolution
+  
+  // Upload tracking
+  uploadStatus UploadStatus @default(UPLOADING)
+  uploadedAt   DateTime?
+  checksum     String?      // File integrity verification
+  
+  // Relations
+  recordingId String
+  userId      String       // Which participant's recording
+  recording   Recording @relation(fields: [recordingId], references: [id])
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("recording_files")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  refreshToken String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@map("sessions")
+}
+
+// Enums
+enum RoomStatus {
+  WAITING
+  RECORDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantRole {
+  HOST
+  CO_HOST
+  PARTICIPANT
+}
+
+enum RecordingStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+  DELETED
+}
+
+enum UploadStatus {
+  UPLOADING
+  COMPLETED
+  FAILED
+  RETRYING
+}
