@@ -34,8 +34,28 @@ app.get('/api/health', (req, res) => {
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   
+  // --- Room Management Events ---
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`User ${socket.id} joined room ${roomId}`);
+    socket.to(roomId).emit('user-joined', socket.id);
+  });
+
+  socket.on('leave-room', (roomId) => {
+    socket.leave(roomId);
+    console.log(`User ${socket.id} left room ${roomId}`);
+    socket.to(roomId).emit('user-left', socket.id);
+  });
+
+  // --- WebRTC Signaling Events ---
+  socket.on('signal', ({ roomId, data }) => {
+    // Broadcast signaling data to all other users in the room
+    socket.to(roomId).emit('signal', { senderId: socket.id, data });
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    // Optionally: broadcast user left to all rooms
   });
 });
 
