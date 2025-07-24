@@ -9,6 +9,7 @@ import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
 import { LandingPage } from './components/LandingPage';
 import './index.css';
 import { socket } from "./services/socket";
+import { Room } from "./components/Room";
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -35,72 +36,75 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <div className="App">
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              iconTheme: {
-                primary: '#4ade80',
-                secondary: '#fff',
+    <>
+      <Room />
+      <Router>
+        <div className="App">
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+              success: {
+                iconTheme: {
+                  primary: '#4ade80',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
-        
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          
-          {/* Auth Routes - redirect if already authenticated */}
-          <Route 
-            path="/login" 
-            element={
-              <PublicRoute>
-                <LoginForm />
-              </PublicRoute>
-            } 
-          />
-          <Route 
-            path="/register" 
-            element={
-              <PublicRoute>
-                <RegisterForm />
-              </PublicRoute>
-            } 
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
           />
           
-          {/* Protected Routes */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-   <div className="text-3xl font-bold underline text-blue-600">
-     Hello, Tailwind!<br />
-     Socket.io status: <span>{isConnected ? "Connected" : "Disconnected"}</span>
-   </div>
-    </Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            
+            {/* Auth Routes - redirect if already authenticated */}
+            <Route 
+              path="/login" 
+              element={
+                <PublicRoute>
+                  <LoginForm />
+                </PublicRoute>
+              } 
+            />
+            <Route 
+              path="/register" 
+              element={
+                <PublicRoute>
+                  <RegisterForm />
+                </PublicRoute>
+              } 
+            />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+     <div className="text-3xl font-bold underline text-blue-600">
+       Hello, Tailwind!<br />
+       Socket.io status: <span>{isConnected ? "Connected" : "Disconnected"}</span>
+     </div>
+      </Router>
+    </>
   );
 }
 
